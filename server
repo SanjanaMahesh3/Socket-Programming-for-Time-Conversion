@@ -1,0 +1,164 @@
+from concurrent.futures import thread
+import socket
+import threading
+from datetime import datetime
+import pytz
+
+
+
+
+#host=socket.gethostname()
+
+host='172.20.10.4'
+#host = socket.gethostbyname(socket.gethostname())
+print(socket.gethostbyname(socket.gethostname()))
+
+
+port=12000 #ports after 6000 are free
+
+s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+
+s.bind((host,port))
+
+def handle_client(conn,addr):
+    print("new connection", addr," connected.")
+
+    connected = True
+
+    while connected:
+        msg_length = conn.recv(1024).decode('utf-8')
+        if msg_length:
+            msg_length = int(msg_length)
+            msg = conn.recv(msg_length).decode('utf-8')
+            if msg == "Disconnect":
+                connected = False
+            
+            print(addr ,":", msg)
+  #          conn.send("Msg received".encode('utf-8'))
+
+            
+
+            date_time_obj = datetime.strptime(msg, '%d/%m/%y %H:%M:%S')
+
+
+            print ("The type of the date is now",  type(date_time_obj))
+            print ("The date is", date_time_obj)
+
+          #  original = pytz.timezone('Asia/Kolkata')
+            converted = pytz.timezone('US/Eastern')
+            #t=datetime.now(original)
+            #print("Original Date & Time: ",msg.strftime('%Y:%m:%d %H:%M:%S %Z %z'))
+            t=datetime.now(converted)
+            #print("converted Date & Time: ",t.strftime('%Y:%m:%d %H:%M:%S %Z %z'))
+            l=msg.split(":");
+            #print(l);
+            #print(type(l[0]));
+            h=l[0].split(" "); 
+            #print(h);
+            #this="Time in EST"
+            hrs=int(h[1]);
+            mini=int(l[1]);
+            #print(hrs,mini);
+            if(hrs>=5 and mini>=30):
+            newh=hrs-5;
+            newm=mini-30;
+            elif (hrs<5 and mini<30):
+            newh=hrs+18;
+            newm=60-mini;
+            elif (hrs>5 and mini<30):
+            newh=hrs-6;
+            newm=60-mini;
+            else:
+            newh=hrs+19;
+            newm=60-mini;
+            if (newh>9 and newm>9):
+            strn1="Time in GMT - ",newh,":",newm,":",l[2];
+            elif (newh>9 and newm<=9):
+            strn1="Time in GMT - ",newh,":0",newm,":",l[2];
+            elif (newh<=9 and newm<=9):
+            strn1="Time in GMT - 0",newh,":0",newm,":",l[2];
+            else:
+            strn1="Time in GMT - 0",newh,":",newm,":",l[2];
+            #print(strn);
+            str1=str(strn1);
+            if(hrs>=9 and mini>=30):
+            newh=hrs-9;
+            newm=mini-30;
+            elif (hrs<=9 and mini>=30):
+            newh=hrs+15;
+            newm=mini-30;
+            elif (hrs<=9 and mini<30):
+            newh=hrs+14;
+            newm=60-mini;
+            else:
+            newh=hrs+2;
+            newm=mini+30;
+            if (newh>9 and newm>9):
+            strn2="Time in EST - ",newh,":",newm,":",l[2];
+            elif (newh>9 and newm<=9):
+            strn2="Time in EST - ",newh,":0",newm,":",l[2];
+            elif (newh<=9 and newm<=9):
+            strn2="Time in EST - 0",newh,":0",newm,":",l[2];
+            else:
+            strn2="Time in EST - 0",newh,":",newm,":",l[2];
+            str2=str(strn2);
+            if(hrs<21 and mini<30):
+            newh=hrs+2;
+            newm=mini+30;
+            elif(hrs<=21 and mini>=30):
+            newh=hrs+3;
+            newm=mini-30;
+            elif(hrs>21 and mini<30):
+            newh=hrs-22;
+            newm=60-mini;
+            else:
+            newh=hrs-21;
+            newm=60-mini;
+            if (newh>9 and newm>9):
+            strn3="Time in Singapore ST - ",newh,":",newm,":",l[2];
+            elif (newh>9 and newm<=9):
+            strn3="Time in Singapore ST - ",newh,":0",newm,":",l[2];
+            elif (newh<=9 and newm<=9):
+            strn3="Time in Singapore ST - 0",newh,":0",newm,":",l[2];
+            else:
+            strn3="Time in Singapore ST - 0",newh,":",newm,":",l[2];
+            str3=str(strn3);
+            if(hrs>=0 and hrs<=19):
+            newh=hrs+4;
+            newm=mini;
+            else:
+            this=hrs-20;
+            newh=this;
+            newm=mini;
+            if (newh>9 and newm>9):
+            strn4="Time in ACST - ",newh,":",newm,":",l[2];
+            elif (newh>9 and newm<=9):
+            strn4="Time in ACST - ",newh,":0",newm,":",l[2];
+            elif (newh<=9 and newm<=9):
+            strn4="Time in ACST - 0",newh,":0",newm,":",l[2];
+            else:
+            strn4="Time in ACST - 0",newh,":",newm,":",l[2];
+            str4=str(strn4);
+   
+            
+            
+            newstr=str1+" "+str2+" "+str3+" "+str4;
+            with open('converted.txt','w',encoding='utf-8') as f:
+            f.write(newstr)
+            f.close()
+            conn.send(newstr.encode('utf-8'));
+    conn.close()
+
+def start():
+    s.listen()
+    print("server is listening ....")
+    while True:
+        conn,addr = s.accept()
+        thread = threading.Thread(target = handle_client,args = (conn,addr))
+        thread.start()
+        print("active connections :",threading.activeCount()-1)
+        
+        
+
+print("server is starting ....")
+start()
