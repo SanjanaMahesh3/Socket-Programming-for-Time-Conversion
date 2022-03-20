@@ -1,0 +1,33 @@
+
+import socket
+
+
+
+host='172.20.10.4'
+
+port=12100 #ports after 6000 are free
+
+c=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+
+c.connect((host,port))
+
+def send(msg):
+    message = msg.encode('utf-8')
+    msg_length = len(message)
+    send_length = str(msg_length).encode('utf-8')
+    send_length+= b' '* (1024 - len(send_length))
+    c.send(send_length)
+    c.send(message)
+    this=c.recv(1024).decode('utf-8')
+    that=str(this)
+    tryin=that.replace('(','').replace(')','').replace(',','').replace("'",'').replace(" ",'')
+    #hello=str(tryin)
+    print(tryin)
+    with open('converted.txt','w',encoding='utf-8') as f:
+        f.write(tryin)
+    f.close()
+
+time=input('Enter time in specified format in IST according to 24hr clock DD/MM/YY HH:MM:SS')
+send(time)
+
+
